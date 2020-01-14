@@ -2,13 +2,9 @@ package com.example.runsical;
 
 import androidx.appcompat.app.AppCompatActivity;
 
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
-import android.view.animation.AlphaAnimation;
-import android.view.animation.Animation;
-import android.view.animation.DecelerateInterpolator;
 import android.widget.TextView;
 
 public class MainActivity extends AppCompatActivity {
@@ -38,4 +34,14 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
+    /*
+     * Handles start work out button, pulls up screen that has music player and music speed selector.
+     */
+    public void startWorkout(View view) {
+        Intent intent = new Intent(this, StartWorkoutActivity.class);
+        //EditText editText = (EditText) findViewById(R.id.editText);
+        //String message = editText.getText().toString();
+        //intent.putExtra(EXTRA_MESSAGE, message);
+        startActivity(intent);
+    }
 }
