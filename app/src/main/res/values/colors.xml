@@ -7,5 +7,7 @@
     <color name="red">#F23D3D</color>
     <color name="darkPink">#F25C5C</color>
     <color name="brown">#8C3B3B</color>
-    <color name="white">#F2EBEB</color>
+    <color name="pinkWhite">#F2EBEB</color>
+    <color name="white">#FFFFFF</color>
+    <color name="grey">#808080</color>
 </resources>
