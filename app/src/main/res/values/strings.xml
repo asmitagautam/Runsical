@@ -1,3 +1,10 @@
 <resources>
-    <string name="app_name">Runsical</string>
+    <string name="app_name">RUNSICAL</string>
+    <string name="welcome">Welcome to</string>
+    <string name="email"> email address</string>
+    <string name="password"> password</string>
+    <string name="signin">SIGN IN</string>
+    <string name="newuser">New to Runsical?</string>
+    <string name="createaccount">Create an account</string>
+    <string name="description">An Android application that curates running music based on the user\'s genre preferences and running speed.</string>
 </resources>
