@@ -17,6 +17,10 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
+
+    packagingOptions {
+        exclude 'META-INF/DEPENDENCIES'
+    }
 }
 
 dependencies {
@@ -26,4 +30,15 @@ dependencies {
     testImplementation 'junit:junit:4.12'
     androidTestImplementation 'androidx.test.ext:junit:1.1.0'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.1.1'
+    compile("com.google.oauth-client:google-oauth-client-jetty:1.23.0") {
+        exclude group: 'org.mortbay.jetty', module: 'servlet-api'
+    }
+    compile("com.google.oauth-client:google-oauth-client:1.30.4") {
+        exclude group: 'xpp3', module: 'xpp3'
+    }
+    compile("com.google.oauth-client:google-oauth-client-servlet:1.30.4")
+    compile("com.google.oauth-client:google-oauth-client-appengine:1.30.4")
+    compile("com.google.oauth-client:google-oauth-client-java6:1.30.4")
+    compile group: 'com.google.apis', name: 'google-api-services-youtube', version: 'v3-rev212-1.25.0'
 }
+
