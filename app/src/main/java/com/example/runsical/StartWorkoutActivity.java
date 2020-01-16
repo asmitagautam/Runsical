@@ -78,16 +78,36 @@ public class StartWorkoutActivity extends YouTubeBaseActivity
         speedUpButton();
         speedDownButton();
 
+
+
+
+        /*
+        try {
+            search("TikTok");
+        } catch (Exception e) {
+            Log.d("MaiDebug", "Search failed with error: " + e.toString());
+        }
+        */
+
+
+    }
+
+    /*
+     * Given a search query, search for video and get first result.
+     */
+    private void playVideo(final String query) {
         Thread thread = new Thread(new Runnable() {
 
             @Override
             public void run() {
                 try  {
                     //Your code goes here
+                    String stringURL = "https://www.googleapis.com/youtube/v3/search?part=snippet&q="
+                            + query + "&type=video&maxResults=1&key="+Config.YOUTUBE_API_KEY;
                     URL url = null;
                     try {
                         // Search using YouTube API, limit to 1 result
-                        url = new URL("https://www.googleapis.com/youtube/v3/search?part=snippet&q=eminem&type=video&maxResults=1&key=AIzaSyDpA7MXOVBTVD_1v5ni4C6vsPbTHEdEe0E");
+                        url = new URL("stringURL");
                     } catch (MalformedURLException e) {
                         e.printStackTrace();
                     }
@@ -137,17 +157,6 @@ public class StartWorkoutActivity extends YouTubeBaseActivity
         });
 
         thread.start();
-
-
-
-        /*
-        try {
-            search("TikTok");
-        } catch (Exception e) {
-            Log.d("MaiDebug", "Search failed with error: " + e.toString());
-        }
-        */
-
 
     }
 
@@ -202,7 +211,7 @@ public class StartWorkoutActivity extends YouTubeBaseActivity
             c.moveToFirst();
             do {
                 songName.append(c.getString(c.getColumnIndex("Song")));
-                songName.append(" - ");
+                songName.append("-");
                 songName.append(c.getString(c.getColumnIndex("Performer")));
                 songs.add(songName.toString());
                 songName.setLength(0);
