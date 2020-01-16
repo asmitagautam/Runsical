@@ -52,6 +52,7 @@
         android:layout_height="54dp"
         android:layout_marginTop="39dp"
         android:background="@color/red"
+        android:onClick="startWorkout"
         android:text="@string/signin"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.5"

@@ -11,8 +11,11 @@
     <string name="createaccount">Create an account</string>
     <string name="fullname">full name</string>
     <string name="signup">SIGN UP</string>
-    <string name="description">Curate running music based on your genre preferences and running speed</string>
+    <string name="description">An Android application that curates running music based on the user\'s genre preferences and running speed.</string>
     <string name="play">Play</string>
     <string name="speed">3.0</string>
+    <string name="player_error">Error initializing YouTube player: %s</string>
+    <string name="seek_to">Jump To</string>
+    <string name="seek_to_hint">Seconds</string>
     <string name="database">Runsical.db</string>
 </resources>
