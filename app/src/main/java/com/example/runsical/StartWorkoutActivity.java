@@ -12,19 +12,6 @@ import com.google.android.youtube.player.YouTubePlayer;
 import com.google.android.youtube.player.YouTubePlayer.Provider;
 import com.google.android.youtube.player.YouTubePlayerView;
 
-
-import com.google.api.client.auth.oauth2.Credential;
-import com.google.api.client.extensions.java6.auth.oauth2.AuthorizationCodeInstalledApp;
-import com.google.api.client.extensions.jetty.auth.oauth2.LocalServerReceiver;
-import com.google.api.client.googleapis.auth.oauth2.GoogleAuthorizationCodeFlow;
-import com.google.api.client.googleapis.auth.oauth2.GoogleClientSecrets;
-import com.google.api.client.googleapis.json.GoogleJsonResponseException;
-import com.google.api.client.http.javanet.NetHttpTransport;
-import com.google.api.client.json.JsonFactory;
-import com.google.api.client.json.jackson2.JacksonFactory;
-
-import com.google.api.services.youtube.YouTube;
-import com.google.api.services.youtube.model.SearchListResponse;
 import android.util.Log;
 import android.view.View;
 import android.widget.ImageButton;
@@ -41,6 +28,8 @@ import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;
 import java.util.Arrays;
 import java.util.Collection;
@@ -63,7 +52,9 @@ public class StartWorkoutActivity extends YouTubeBaseActivity
     private SQLiteDatabase mydatabase;
     private Stack<String> songsPlayed;
     private ArrayList<String> songList;
+    private YouTubePlayer youtubePlayer;
     private String videoId;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -101,15 +92,6 @@ public class StartWorkoutActivity extends YouTubeBaseActivity
         nextSongButton();
         previousSongButton();
 
-        /*
-        try {
-            search("TikTok");
-        } catch (Exception e) {
-            Log.d("MaiDebug", "Search failed with error: " + e.toString());
-        }
-        */
-
-
     }
 
     /*
@@ -122,9 +104,9 @@ public class StartWorkoutActivity extends YouTubeBaseActivity
             @Override
             public void run() {
                 try  {
-                    //Your code goes here
+
                     String stringURL = "https://www.googleapis.com/youtube/v3/search?part=snippet&q="
-                            + query + "&type=video&maxResults=1&key="+Config.YOUTUBE_API_KEY;
+                            + URLEncoder.encode(query, StandardCharsets.UTF_8.name()) + "&type=video&maxResults=1&key="+Config.YOUTUBE_API_KEY;
                     URL url = null;
                     try {
                         // Search using YouTube API, limit to 1 result
@@ -140,6 +122,7 @@ public class StartWorkoutActivity extends YouTubeBaseActivity
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
+
                     try {
                         InputStream in = new BufferedInputStream(urlConnection.getInputStream());
 
@@ -160,11 +143,11 @@ public class StartWorkoutActivity extends YouTubeBaseActivity
                         //Log.d("MaiDebug vid", "Got vid object");
                         videoId = vid.getJSONObject("id").getString("videoId");
                         Log.d("MaiDebug videoId", videoId);
+                        youtubePlayer.cueVideo(videoId);
 
                     } catch (IOException e) {
                         e.printStackTrace();
-                    }
-                    finally {
+                    } finally {
                         urlConnection.disconnect();
                     }
 
@@ -185,6 +168,7 @@ public class StartWorkoutActivity extends YouTubeBaseActivity
      * If successful, play video.
      */
     public void onInitializationSuccess(Provider provider, YouTubePlayer player, boolean wasRestored) {
+        this.youtubePlayer = player;
         if (!wasRestored) {
             player.cueVideo(videoId); // Plays https://www.youtube.com/watch?v= + videoId
         }
@@ -400,80 +384,8 @@ public class StartWorkoutActivity extends YouTubeBaseActivity
         return youTubeView;
     }
 
-    /*
-     *
-     * YouTube search functions
-     *
-     *
-     */
-
-    private static final String CLIENT_SECRETS= "client_secret.json";
-    private static final Collection<String> SCOPES =
-            Arrays.asList("https://www.googleapis.com/auth/youtube.readonly");
-
-    private static final String APPLICATION_NAME = "Runsical";
-    private static final JsonFactory JSON_FACTORY = JacksonFactory.getDefaultInstance();
-
-    /**
-     * Create an authorized Credential object.
-     *
-     * @return an authorized Credential object.
-     * @throws IOException
-     */
-    public Credential authorize(final NetHttpTransport httpTransport) throws IOException {
-        // Load client secrets.
-        InputStream in = getAssets().open(CLIENT_SECRETS);
-        //StartWorkoutActivity.class.getResourceAsStream
-        //.getClassLoader()
-        GoogleClientSecrets clientSecrets =
-                GoogleClientSecrets.load(JSON_FACTORY, new InputStreamReader(in));
-        // Build flow and trigger user authorization request.
-        GoogleAuthorizationCodeFlow flow =
-                new GoogleAuthorizationCodeFlow.Builder(httpTransport, JSON_FACTORY, clientSecrets, SCOPES)
-                        .build();
-        LocalServerReceiver localServerReceiver = new LocalServerReceiver();
-        AuthorizationCodeInstalledApp aCIA = new AuthorizationCodeInstalledApp(flow, localServerReceiver);
-        Credential credential = aCIA.authorize("user");
-        return credential;
-    }
-
-    /**
-     * Build and return an authorized API client service.
-     *
-     * @return an authorized API client service
-     * @throws GeneralSecurityException, IOException
-     */
-    public YouTube getService() throws GeneralSecurityException, IOException {
-        final NetHttpTransport httpTransport = new com.google.api.client.http.javanet.NetHttpTransport();
-        //GoogleNetHttpTransport.newTrustedTransport();
-        Credential credential = authorize(httpTransport);
-        return new YouTube.Builder(httpTransport, JSON_FACTORY, credential)
-                .setApplicationName(APPLICATION_NAME)
-                .build();
-    }
-
-    /**
-     * Call function to create API service object. Define and
-     * execute API request. Print API response.
-     *
-     * @throws GeneralSecurityException, IOException, GoogleJsonResponseException
-     */
-    public void search(String query)
-            throws GeneralSecurityException, IOException, GoogleJsonResponseException {
-        YouTube youtubeService = getService();
-        // Define and execute the API request
-        YouTube.Search.List request = youtubeService.search()
-                .list("snippet");
-        SearchListResponse response = request.setMaxResults(25L)
-                .setQ(query)
-                .execute();
-        Log.d("MaiDebug", response.toPrettyString());
-    }
-
 
     // References:
     // - Only start search once the user has finished selecting a running speed:
     // https://stackoverflow.com/questions/12142021/how-can-i-do-something-0-5-second-after-text-changed-in-my-edittext
-
-
 }
