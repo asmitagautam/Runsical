@@ -212,10 +212,6 @@ public class StartWorkoutActivity extends YouTubeBaseActivity
         return songs;
     }
 
-    private String getRandomSong(ArrayList<String> songList){
-        return null;
-    }
-
     public void speedUpButton(){
         //Text view for treadmill speed
         final TextView speedView = findViewById(R.id.speed);
@@ -254,6 +250,7 @@ public class StartWorkoutActivity extends YouTubeBaseActivity
                                     }
                                 }
         );
+        
     }
 
 
