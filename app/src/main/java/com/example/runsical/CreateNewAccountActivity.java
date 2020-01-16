@@ -9,6 +9,7 @@ import android.view.View;
 import android.widget.EditText;
 import android.widget.TextView;
 import java.io.File;
+import java.util.regex.Pattern;
 
 public class CreateNewAccountActivity extends AppCompatActivity {
 
@@ -56,7 +57,7 @@ public class CreateNewAccountActivity extends AppCompatActivity {
                                           //do not let them continue to sign up
                                           EditText emailText = findViewById(R.id.emailForm);
                                           String email = emailText.getText().toString();
-                                          if (email.length() == 0)
+                                          if (email.length() == 0 || !isValid(email))
                                               emailText.setBackground(getResources().getDrawable(R.drawable.edit_text_border));
                                           EditText fullNameText = findViewById(R.id.fullname);
                                           String fullName = fullNameText.getText().toString();
@@ -72,7 +73,7 @@ public class CreateNewAccountActivity extends AppCompatActivity {
                                           String confirmPassword = confirmPasswordText.getText().toString();
                                           if (confirmPassword.length() == 0 || !password.equals(confirmPassword))
                                               confirmPasswordText.setBackground(getResources().getDrawable(R.drawable.edit_text_border));
-                                          if (email.length() == 0 || fullName.length() == 0 || password.length() == 0 || confirmPassword.length() == 0 || !password.equals(confirmPassword))
+                                          if (email.length() == 0 || !isValid(email) || fullName.length() == 0 || password.length() == 0 || confirmPassword.length() == 0 || !password.equals(confirmPassword))
                                               return;
                                           mydatabase.execSQL("INSERT INTO Account(fullName, email, password) VALUES ('"+fullName+"','"+email+"','"+password+"')");
                                           Intent intent = new Intent(CreateNewAccountActivity.this, StartWorkoutActivity.class);
@@ -80,6 +81,22 @@ public class CreateNewAccountActivity extends AppCompatActivity {
                                       }
                                   }
         );
+    }
+
+    /*
+     * check for valid format for emails
+     */
+    public static boolean isValid(String email)
+    {
+        String emailRegex = "^[a-zA-Z0-9_+&*-]+(?:\\."+
+                "[a-zA-Z0-9_+&*-]+)*@" +
+                "(?:[a-zA-Z0-9-]+\\.)+[a-z" +
+                "A-Z]{2,7}$";
+
+        Pattern pat = Pattern.compile(emailRegex);
+        if (email == null)
+            return false;
+        return pat.matcher(email).matches();
     }
 
 }

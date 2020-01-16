@@ -1,13 +1,8 @@
 package com.example.runsical;
 
-import androidx.appcompat.app.AppCompatActivity;
-
 import android.content.Intent;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
-import android.media.AudioManager;
-import android.media.MediaPlayer;
-import android.content.Intent;
 import android.os.Bundle;
 import android.widget.Toast;
 
@@ -17,34 +12,15 @@ import com.google.android.youtube.player.YouTubePlayer;
 import com.google.android.youtube.player.YouTubePlayer.Provider;
 import com.google.android.youtube.player.YouTubePlayerView;
 
-
-import com.google.api.client.auth.oauth2.Credential;
-import com.google.api.client.extensions.java6.auth.oauth2.AuthorizationCodeInstalledApp;
-import com.google.api.client.extensions.jetty.auth.oauth2.LocalServerReceiver;
-import com.google.api.client.googleapis.auth.oauth2.GoogleAuthorizationCodeFlow;
-import com.google.api.client.googleapis.auth.oauth2.GoogleClientSecrets;
-import com.google.api.client.googleapis.javanet.GoogleNetHttpTransport;
-import com.google.api.client.googleapis.json.GoogleJsonResponseException;
-import com.google.api.client.http.javanet.NetHttpTransport;
-import com.google.api.client.json.JsonFactory;
-import com.google.api.client.json.jackson2.JacksonFactory;
-
-import com.google.api.services.youtube.YouTube;
-import com.google.api.services.youtube.model.SearchListResponse;
 import android.util.Log;
 import android.view.View;
-import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.TextView;
 
 import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.security.GeneralSecurityException;
-import java.util.Arrays;
-import java.util.Collection;
 import java.util.ArrayList;
+import java.util.Random;
+import java.util.Stack;
 
 public class StartWorkoutActivity extends YouTubeBaseActivity
         implements YouTubePlayer.OnInitializedListener {
@@ -56,6 +32,7 @@ public class StartWorkoutActivity extends YouTubeBaseActivity
     private final double MAX_TREADMILL_SPEED = 11.9;
     private final double MIN_TREADMILL_SPEED = 3.0;
     private SQLiteDatabase mydatabase;
+    private Stack<String> songsPlayed;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -68,12 +45,26 @@ public class StartWorkoutActivity extends YouTubeBaseActivity
         File filePath = getApplicationContext().getDatabasePath(getResources().getString(R.string.database));
         mydatabase = SQLiteDatabase.openDatabase(filePath.getAbsolutePath(), null, 0);
 
+        //initialize stack that keeps track of songs played for the previous button
+        songsPlayed = new Stack<>();
+
         //default treadmill speed
         treadmillSpeed = 3.0;
+        //get a random song at that treadmill speed
+        double bpm = getBPM(treadmillSpeed);
+        ArrayList<String> songList = getSongList(bpm);
+        String song = getRandomSong(songList);
+        songsPlayed.push(song);
+        TextView songInfo = findViewById(R.id.songInfo);
+        songInfo.setText(song);
 
         //click listeners for up and down button for treadmill speed
         speedUpButton();
         speedDownButton();
+
+        //click listeners for next and previous button for music
+        nextSongButton();
+        previousSongButton();
     }
 
     @Override
@@ -102,41 +93,86 @@ public class StartWorkoutActivity extends YouTubeBaseActivity
         }
     }
 
+    /*
+     * Queries BPM table in database for the bpm at specified treadmill speed
+     */
     private double getBPM(double speed){
         String query = "SELECT bpm FROM BPM WHERE speed = ?";
-        Cursor c = mydatabase.rawQuery(query, new String[]{String.format("%.1f", treadmillSpeed)});
+        Cursor c = mydatabase.rawQuery(query, new String[]{String.format("%.1f", speed)});
         int bpm = 0;
-        if (c.getCount() > 0)
+        try {
+            if (c.getCount() > 0)
         {
             c.moveToFirst();
             do {
                 bpm = c.getInt(c.getColumnIndex("bpm"));
             } while (c.moveToNext());
+        }
+        } finally {
             c.close();
         }
         return bpm;
     }
 
-    private ArrayList<String> getSongList(double BPM){
+    /*
+     * Queries Music table in database for all songs at a specified tempo/BPM
+     * loops over result set and adds to arraylist in the format SongName - Artist
+     */
+    private ArrayList<String> getSongList(double BPM) {
         String query = "SELECT Performer, Song FROM Music WHERE tempo = ?";
         Cursor c = mydatabase.rawQuery(query, new String[]{String.format("%.1f", BPM)});
         ArrayList<String> songs = new ArrayList<>();
         StringBuilder songName = new StringBuilder();
-        if (c.getCount() > 0)
-        {
-            c.moveToFirst();
-            do {
-                songName.append(c.getString(c.getColumnIndex("Song")));
-                songName.append(" - ");
-                songName.append(c.getString(c.getColumnIndex("Performer")));
-                songs.add(songName.toString());
-                songName.setLength(0);
-            } while (c.moveToNext());
+        try {
+            if (c.getCount() > 0) {
+                c.moveToFirst();
+                do {
+                    songName.append(c.getString(c.getColumnIndex("Song")));
+                    songName.append(" - ");
+                    songName.append(c.getString(c.getColumnIndex("Performer")));
+                    songs.add(songName.toString());
+                    songName.setLength(0);
+                } while (c.moveToNext());
+                c.close();
+            }
+        } finally {
             c.close();
         }
         return songs;
     }
 
+    /*
+     * Get a random song from the arraylist of songs
+     */
+    private String getRandomSong(ArrayList<String> songList){
+        double value = 0.1;
+        while (songList.size() == 0){
+            if (treadmillSpeed-value > 3.0) {
+                double bpm1 = getBPM(treadmillSpeed - value);
+                ArrayList<String> songs1 = getSongList(bpm1);
+                if (songs1.size() != 0) {
+                    songList = songs1;
+                    break;
+                }
+            }
+            if (treadmillSpeed+value < 12.0) {
+                double bpm2 = getBPM(treadmillSpeed + value);
+                Log.d("ASMITA", String.format("%.1f", bpm2));
+                Log.d("ASMITA", String.format("%.1f", treadmillSpeed + value));
+                ArrayList<String> songs2 = getSongList(bpm2);
+                songList = songs2;
+            }
+            value += 0.1;
+        }
+        Random r = new Random();
+        Integer random = r.nextInt(songList.size());
+        Log.d("ASMITA", songList.get(random));
+        return songList.get(random);
+    }
+
+    /*
+     * click listener for speed up button
+     */
     public void speedUpButton(){
         //Text view for treadmill speed
         final TextView speedView = findViewById(R.id.speed);
@@ -151,12 +187,24 @@ public class StartWorkoutActivity extends YouTubeBaseActivity
                                           treadmillSpeed += 0.1;
                                           //format double to display only one decimal point
                                           speedView.setText(String.format("%.1f", treadmillSpeed));
+
+                                          //get a random song at that treadmill speed
+                                          double bpm = getBPM(treadmillSpeed);
+                                          ArrayList<String> songList = getSongList(bpm);
+                                          String song = getRandomSong(songList);
+                                          songsPlayed.push(song);
+                                          TextView songInfo = findViewById(R.id.songInfo);
+                                          songInfo.setText(song);
                                       }
                                   }
                               }
         );
+
     }
 
+    /*
+     * click listener for speed down button
+     */
     public void speedDownButton(){
         //Text view for treadmill speed
         final TextView speedView = findViewById(R.id.speed);
@@ -171,11 +219,57 @@ public class StartWorkoutActivity extends YouTubeBaseActivity
                                             treadmillSpeed -= 0.1;
                                             //format double to display only one decimal point and remove negative sign from 0.0
                                             speedView.setText(String.format("%.1f", treadmillSpeed).replaceAll("^-(?=0(\\.0*)?$)", ""));
+
+                                            //get a random song at that treadmill speed
+                                            double bpm = getBPM(treadmillSpeed);
+                                            ArrayList<String> songList = getSongList(bpm);
+                                            String song = getRandomSong(songList);
+                                            songsPlayed.push(song);
+                                            TextView songInfo = findViewById(R.id.songInfo);
+                                            songInfo.setText(song);
                                         }
                                     }
                                 }
         );
         
+    }
+
+    /*
+     * click listener for next song button
+     */
+    public void nextSongButton(){
+        ImageButton next = findViewById(R.id.next);
+        next.setOnClickListener(new View.OnClickListener() {
+                                    @Override
+                                    public void onClick(View v) {
+                                        double bpm = getBPM(treadmillSpeed);
+                                        ArrayList<String> songList = getSongList(bpm);
+                                        String song = getRandomSong(songList);
+                                        songsPlayed.push(song);
+                                        TextView songInfo = findViewById(R.id.songInfo);
+                                        songInfo.setText(song);
+                                    }
+                                }
+        );
+    }
+
+    /*
+     * click listener for previous song button
+     */
+    public void previousSongButton(){
+        ImageButton previous = findViewById(R.id.previous);
+        previous.setOnClickListener(new View.OnClickListener() {
+                                    @Override
+                                    public void onClick(View v) {
+                                        TextView songInfo = findViewById(R.id.songInfo);
+                                        if (songsPlayed.size() > 1) {
+                                            songInfo.setText(songsPlayed.pop());
+                                        } else {
+                                            songInfo.setText(songsPlayed.peek());
+                                        }
+                                    }
+                                }
+        );
     }
 
 
