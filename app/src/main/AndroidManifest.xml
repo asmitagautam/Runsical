@@ -11,7 +11,7 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppBaseTheme">
-        <activity android:name=".CreateNewAccount"></activity>
+        <activity android:name=".CreateNewAccountActivity"></activity>
         <activity android:name=".StartWorkoutActivity"></activity>
         <activity android:name=".MainActivity">
             <intent-filter>
