@@ -33,6 +33,7 @@ public class StartWorkoutActivity extends YouTubeBaseActivity
     private final double MIN_TREADMILL_SPEED = 3.0;
     private SQLiteDatabase mydatabase;
     private Stack<String> songsPlayed;
+    private ArrayList<String> songList;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -48,11 +49,14 @@ public class StartWorkoutActivity extends YouTubeBaseActivity
         //initialize stack that keeps track of songs played for the previous button
         songsPlayed = new Stack<>();
 
+        //initialize songList for the current BPM
+        songList = new ArrayList<>();
+
         //default treadmill speed
         treadmillSpeed = 3.0;
         //get a random song at that treadmill speed
         double bpm = getBPM(treadmillSpeed);
-        ArrayList<String> songList = getSongList(bpm);
+        songList = getSongList(bpm);
         String song = getRandomSong(songList);
         songsPlayed.push(song);
         TextView songInfo = findViewById(R.id.songInfo);
@@ -190,8 +194,9 @@ public class StartWorkoutActivity extends YouTubeBaseActivity
 
                                           //get a random song at that treadmill speed
                                           double bpm = getBPM(treadmillSpeed);
-                                          ArrayList<String> songList = getSongList(bpm);
+                                          songList = getSongList(bpm);
                                           String song = getRandomSong(songList);
+                                          songsPlayed.empty();
                                           songsPlayed.push(song);
                                           TextView songInfo = findViewById(R.id.songInfo);
                                           songInfo.setText(song);
@@ -222,8 +227,9 @@ public class StartWorkoutActivity extends YouTubeBaseActivity
 
                                             //get a random song at that treadmill speed
                                             double bpm = getBPM(treadmillSpeed);
-                                            ArrayList<String> songList = getSongList(bpm);
+                                            songList = getSongList(bpm);
                                             String song = getRandomSong(songList);
+                                            songsPlayed.empty();
                                             songsPlayed.push(song);
                                             TextView songInfo = findViewById(R.id.songInfo);
                                             songInfo.setText(song);
@@ -242,8 +248,6 @@ public class StartWorkoutActivity extends YouTubeBaseActivity
         next.setOnClickListener(new View.OnClickListener() {
                                     @Override
                                     public void onClick(View v) {
-                                        double bpm = getBPM(treadmillSpeed);
-                                        ArrayList<String> songList = getSongList(bpm);
                                         String song = getRandomSong(songList);
                                         songsPlayed.push(song);
                                         TextView songInfo = findViewById(R.id.songInfo);
@@ -262,10 +266,8 @@ public class StartWorkoutActivity extends YouTubeBaseActivity
                                     @Override
                                     public void onClick(View v) {
                                         TextView songInfo = findViewById(R.id.songInfo);
-                                        if (songsPlayed.size() > 1) {
+                                        if (!songsPlayed.isEmpty()) {
                                             songInfo.setText(songsPlayed.pop());
-                                        } else {
-                                            songInfo.setText(songsPlayed.peek());
                                         }
                                     }
                                 }
