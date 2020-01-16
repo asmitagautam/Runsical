@@ -63,6 +63,7 @@ public class StartWorkoutActivity extends YouTubeBaseActivity
     private SQLiteDatabase mydatabase;
     private Stack<String> songsPlayed;
     private ArrayList<String> songList;
+    private String videoId;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -90,6 +91,7 @@ public class StartWorkoutActivity extends YouTubeBaseActivity
         songsPlayed.push(song);
         TextView songInfo = findViewById(R.id.songInfo);
         songInfo.setText(song);
+        playVideo(song);
 
         //click listeners for up and down button for treadmill speed
         speedUpButton();
@@ -99,16 +101,34 @@ public class StartWorkoutActivity extends YouTubeBaseActivity
         nextSongButton();
         previousSongButton();
 
+        /*
+        try {
+            search("TikTok");
+        } catch (Exception e) {
+            Log.d("MaiDebug", "Search failed with error: " + e.toString());
+        }
+        */
+
+
+    }
+
+    /*
+     * Given a search query, search for video and get first result.
+     */
+    private void playVideo(final String query) {
+
         Thread thread = new Thread(new Runnable() {
 
             @Override
             public void run() {
                 try  {
                     //Your code goes here
+                    String stringURL = "https://www.googleapis.com/youtube/v3/search?part=snippet&q="
+                            + query + "&type=video&maxResults=1&key="+Config.YOUTUBE_API_KEY;
                     URL url = null;
                     try {
                         // Search using YouTube API, limit to 1 result
-                        url = new URL("https://www.googleapis.com/youtube/v3/search?part=snippet&q=eminem&type=video&maxResults=1&key=AIzaSyDpA7MXOVBTVD_1v5ni4C6vsPbTHEdEe0E");
+                        url = new URL(stringURL);
                     } catch (MalformedURLException e) {
                         e.printStackTrace();
                     }
@@ -138,10 +158,8 @@ public class StartWorkoutActivity extends YouTubeBaseActivity
                         //Log.d("MaiDebug items", response.getString("items"));
                         JSONObject vid = response.getJSONArray("items").getJSONObject(0);
                         //Log.d("MaiDebug vid", "Got vid object");
-                        String videoId = vid.getJSONObject("id").getString("videoId");
+                        videoId = vid.getJSONObject("id").getString("videoId");
                         Log.d("MaiDebug videoId", videoId);
-
-
 
                     } catch (IOException e) {
                         e.printStackTrace();
@@ -159,17 +177,6 @@ public class StartWorkoutActivity extends YouTubeBaseActivity
 
         thread.start();
 
-
-
-        /*
-        try {
-            search("TikTok");
-        } catch (Exception e) {
-            Log.d("MaiDebug", "Search failed with error: " + e.toString());
-        }
-        */
-
-
     }
 
     @Override
@@ -179,7 +186,7 @@ public class StartWorkoutActivity extends YouTubeBaseActivity
      */
     public void onInitializationSuccess(Provider provider, YouTubePlayer player, boolean wasRestored) {
         if (!wasRestored) {
-            player.cueVideo("fhWaJi1Hsfo"); // Plays https://www.youtube.com/watch?v=fhWaJi1Hsfo
+            player.cueVideo(videoId); // Plays https://www.youtube.com/watch?v= + videoId
         }
     }
 
@@ -301,6 +308,7 @@ public class StartWorkoutActivity extends YouTubeBaseActivity
                                           songsPlayed.push(song);
                                           TextView songInfo = findViewById(R.id.songInfo);
                                           songInfo.setText(song);
+                                          playVideo(song);
                                       }
                                   }
                               }
@@ -334,6 +342,7 @@ public class StartWorkoutActivity extends YouTubeBaseActivity
                                             songsPlayed.push(song);
                                             TextView songInfo = findViewById(R.id.songInfo);
                                             songInfo.setText(song);
+                                            playVideo(song);
                                         }
                                     }
                                 }
@@ -353,6 +362,7 @@ public class StartWorkoutActivity extends YouTubeBaseActivity
                                         songsPlayed.push(song);
                                         TextView songInfo = findViewById(R.id.songInfo);
                                         songInfo.setText(song);
+                                        playVideo(song);
                                     }
                                 }
         );
@@ -368,7 +378,9 @@ public class StartWorkoutActivity extends YouTubeBaseActivity
                                     public void onClick(View v) {
                                         TextView songInfo = findViewById(R.id.songInfo);
                                         if (!songsPlayed.isEmpty()) {
-                                            songInfo.setText(songsPlayed.pop());
+                                            String song = songsPlayed.pop();
+                                            songInfo.setText(song);
+                                            playVideo(song);
                                         }
                                     }
                                 }
