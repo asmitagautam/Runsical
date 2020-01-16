@@ -1,13 +1,8 @@
 package com.example.runsical;
 
-import androidx.appcompat.app.AppCompatActivity;
-
 import android.content.Intent;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
-import android.media.AudioManager;
-import android.media.MediaPlayer;
-import android.content.Intent;
 import android.os.Bundle;
 import android.widget.Toast;
 
@@ -23,7 +18,6 @@ import com.google.api.client.extensions.java6.auth.oauth2.AuthorizationCodeInsta
 import com.google.api.client.extensions.jetty.auth.oauth2.LocalServerReceiver;
 import com.google.api.client.googleapis.auth.oauth2.GoogleAuthorizationCodeFlow;
 import com.google.api.client.googleapis.auth.oauth2.GoogleClientSecrets;
-import com.google.api.client.googleapis.javanet.GoogleNetHttpTransport;
 import com.google.api.client.googleapis.json.GoogleJsonResponseException;
 import com.google.api.client.http.javanet.NetHttpTransport;
 import com.google.api.client.json.JsonFactory;
@@ -33,18 +27,27 @@ import com.google.api.services.youtube.YouTube;
 import com.google.api.services.youtube.model.SearchListResponse;
 import android.util.Log;
 import android.view.View;
-import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.TextView;
 
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.security.GeneralSecurityException;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.ArrayList;
+import java.util.Scanner;
+
+import javax.net.ssl.HttpsURLConnection;
 
 public class StartWorkoutActivity extends YouTubeBaseActivity
         implements YouTubePlayer.OnInitializedListener {
@@ -74,6 +77,78 @@ public class StartWorkoutActivity extends YouTubeBaseActivity
         //click listeners for up and down button for treadmill speed
         speedUpButton();
         speedDownButton();
+
+        Thread thread = new Thread(new Runnable() {
+
+            @Override
+            public void run() {
+                try  {
+                    //Your code goes here
+                    URL url = null;
+                    try {
+                        // Search using YouTube API, limit to 1 result
+                        url = new URL("https://www.googleapis.com/youtube/v3/search?part=snippet&q=eminem&type=video&maxResults=1&key=AIzaSyDpA7MXOVBTVD_1v5ni4C6vsPbTHEdEe0E");
+                    } catch (MalformedURLException e) {
+                        e.printStackTrace();
+                    }
+                    HttpURLConnection urlConnection = null;
+
+                    try {
+                        urlConnection = (HttpURLConnection) url.openConnection();
+                        urlConnection.setRequestProperty("Accept-Encoding", "identity");
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                    try {
+                        InputStream in = new BufferedInputStream(urlConnection.getInputStream());
+
+                        if (!url.getHost().equals(urlConnection.getURL().getHost())) {
+                            // we were redirected! Kick the user out to the browser to sign on?
+                            Log.d("MaiDebug", "redirected");
+                        }
+
+
+                        // print response
+                        Scanner s = new Scanner(in).useDelimiter("\\A");
+                        String result = s.hasNext() ? s.next() : "";
+
+                        //Log.d("MaiDebug", result);
+                        JSONObject response = new JSONObject(result);
+                        //Log.d("MaiDebug items", response.getString("items"));
+                        JSONObject vid = response.getJSONArray("items").getJSONObject(0);
+                        //Log.d("MaiDebug vid", "Got vid object");
+                        String videoId = vid.getJSONObject("id").getString("videoId");
+                        Log.d("MaiDebug videoId", videoId);
+
+
+
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                    finally {
+                        urlConnection.disconnect();
+                    }
+
+                    // code ends
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        });
+
+        thread.start();
+
+
+
+        /*
+        try {
+            search("TikTok");
+        } catch (Exception e) {
+            Log.d("MaiDebug", "Search failed with error: " + e.toString());
+        }
+        */
+
+
     }
 
     @Override
@@ -192,6 +267,76 @@ public class StartWorkoutActivity extends YouTubeBaseActivity
 
     protected Provider getYouTubePlayerProvider() {
         return youTubeView;
+    }
+
+    /*
+     *
+     * YouTube search functions
+     *
+     *
+     */
+
+    private static final String CLIENT_SECRETS= "client_secret.json";
+    private static final Collection<String> SCOPES =
+            Arrays.asList("https://www.googleapis.com/auth/youtube.readonly");
+
+    private static final String APPLICATION_NAME = "Runsical";
+    private static final JsonFactory JSON_FACTORY = JacksonFactory.getDefaultInstance();
+
+    /**
+     * Create an authorized Credential object.
+     *
+     * @return an authorized Credential object.
+     * @throws IOException
+     */
+    public Credential authorize(final NetHttpTransport httpTransport) throws IOException {
+        // Load client secrets.
+        InputStream in = getAssets().open(CLIENT_SECRETS);
+        //StartWorkoutActivity.class.getResourceAsStream
+        //.getClassLoader()
+        GoogleClientSecrets clientSecrets =
+                GoogleClientSecrets.load(JSON_FACTORY, new InputStreamReader(in));
+        // Build flow and trigger user authorization request.
+        GoogleAuthorizationCodeFlow flow =
+                new GoogleAuthorizationCodeFlow.Builder(httpTransport, JSON_FACTORY, clientSecrets, SCOPES)
+                        .build();
+        LocalServerReceiver localServerReceiver = new LocalServerReceiver();
+        AuthorizationCodeInstalledApp aCIA = new AuthorizationCodeInstalledApp(flow, localServerReceiver);
+        Credential credential = aCIA.authorize("user");
+        return credential;
+    }
+
+    /**
+     * Build and return an authorized API client service.
+     *
+     * @return an authorized API client service
+     * @throws GeneralSecurityException, IOException
+     */
+    public YouTube getService() throws GeneralSecurityException, IOException {
+        final NetHttpTransport httpTransport = new com.google.api.client.http.javanet.NetHttpTransport();
+        //GoogleNetHttpTransport.newTrustedTransport();
+        Credential credential = authorize(httpTransport);
+        return new YouTube.Builder(httpTransport, JSON_FACTORY, credential)
+                .setApplicationName(APPLICATION_NAME)
+                .build();
+    }
+
+    /**
+     * Call function to create API service object. Define and
+     * execute API request. Print API response.
+     *
+     * @throws GeneralSecurityException, IOException, GoogleJsonResponseException
+     */
+    public void search(String query)
+            throws GeneralSecurityException, IOException, GoogleJsonResponseException {
+        YouTube youtubeService = getService();
+        // Define and execute the API request
+        YouTube.Search.List request = youtubeService.search()
+                .list("snippet");
+        SearchListResponse response = request.setMaxResults(25L)
+                .setQ(query)
+                .execute();
+        Log.d("MaiDebug", response.toPrettyString());
     }
 
 
