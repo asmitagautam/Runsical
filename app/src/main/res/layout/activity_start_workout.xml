@@ -42,10 +42,11 @@
 
         <TextView
             android:id="@+id/speed"
-            android:layout_width="176dp"
-            android:layout_height="171dp"
+            android:layout_width="250dp"
+            android:layout_height="148dp"
+            android:gravity="center"
             android:text="@string/speed"
-            android:textSize="130sp"
+            android:textSize="100sp"
             tools:layout_conversion_absoluteHeight="220dp"
             tools:layout_conversion_absoluteWidth="220dp"
             tools:layout_editor_absoluteX="98dp"
