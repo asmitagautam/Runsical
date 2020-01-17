@@ -64,6 +64,7 @@ public class StartWorkoutActivity extends YouTubeBaseActivity
     private Stack<String> songsPlayed;
     private ArrayList<String> songList;
     private String videoId;
+    private YouTubePlayer player;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -160,6 +161,7 @@ public class StartWorkoutActivity extends YouTubeBaseActivity
                         //Log.d("MaiDebug vid", "Got vid object");
                         videoId = vid.getJSONObject("id").getString("videoId");
                         Log.d("MaiDebug videoId", videoId);
+                        player.cueVideo(videoId);
 
                     } catch (IOException e) {
                         e.printStackTrace();
@@ -185,6 +187,7 @@ public class StartWorkoutActivity extends YouTubeBaseActivity
      * If successful, play video.
      */
     public void onInitializationSuccess(Provider provider, YouTubePlayer player, boolean wasRestored) {
+        this.player = player;
         if (!wasRestored) {
             player.cueVideo(videoId); // Plays https://www.youtube.com/watch?v= + videoId
         }
