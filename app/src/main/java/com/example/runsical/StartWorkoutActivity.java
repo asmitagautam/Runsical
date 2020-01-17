@@ -292,7 +292,7 @@ public class StartWorkoutActivity extends YouTubeBaseActivity
                     double bpm = getBPM(treadmillSpeed);
                     songList = getSongList(bpm);
                     String song = getRandomSong(songList);
-                    songsPlayed.empty();
+                    songsPlayed.clear();
                     songsPlayed.push(song);
                     TextView songInfo = findViewById(R.id.songInfo);
                     songInfo.setText(song);
@@ -333,7 +333,7 @@ public class StartWorkoutActivity extends YouTubeBaseActivity
                     double bpm = getBPM(treadmillSpeed);
                     songList = getSongList(bpm);
                     String song = getRandomSong(songList);
-                    songsPlayed.empty();
+                    songsPlayed.clear();
                     songsPlayed.push(song);
                     TextView songInfo = findViewById(R.id.songInfo);
                     songInfo.setText(song);
