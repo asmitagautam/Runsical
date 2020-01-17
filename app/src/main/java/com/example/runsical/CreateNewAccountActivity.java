@@ -21,7 +21,9 @@ public class CreateNewAccountActivity extends AppCompatActivity {
             help.createDataBase();
         } catch (Exception e){
 
-        }*/
+        }
+        */
+
 
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_create_new_account);
