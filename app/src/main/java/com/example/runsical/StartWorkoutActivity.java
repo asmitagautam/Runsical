@@ -4,6 +4,8 @@ import android.content.Intent;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
+import android.os.Handler;
+import android.view.MotionEvent;
 import android.widget.Toast;
 
 import com.google.android.youtube.player.YouTubeBaseActivity;
@@ -54,6 +56,9 @@ public class StartWorkoutActivity extends YouTubeBaseActivity
     private ArrayList<String> songList;
     private YouTubePlayer youtubePlayer;
     private String videoId;
+    private Handler repeatUpdateHandler = new Handler();
+    private boolean mAutoIncrement = false;
+    private boolean mAutoDecrement = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -252,8 +257,6 @@ public class StartWorkoutActivity extends YouTubeBaseActivity
             }
             if (treadmillSpeed+value < 12.0) {
                 double bpm2 = getBPM(treadmillSpeed + value);
-                Log.d("ASMITA", String.format("%.1f", bpm2));
-                Log.d("ASMITA", String.format("%.1f", treadmillSpeed + value));
                 ArrayList<String> songs2 = getSongList(bpm2);
                 songList = songs2;
             }
@@ -261,7 +264,6 @@ public class StartWorkoutActivity extends YouTubeBaseActivity
         }
         Random r = new Random();
         Integer random = r.nextInt(songList.size());
-        Log.d("ASMITA", songList.get(random));
         return songList.get(random);
     }
 
@@ -269,34 +271,37 @@ public class StartWorkoutActivity extends YouTubeBaseActivity
      * click listener for speed up button
      */
     public void speedUpButton(){
-        //Text view for treadmill speed
-        final TextView speedView = findViewById(R.id.speed);
-
         //increase treadmill speed by 0.1 everytime up button pressed
         ImageButton up = findViewById(R.id.up);
-        up.setOnClickListener(new View.OnClickListener() {
-                                  @Override
-                                  public void onClick(View v) {
-                                      //only update speed if it is less than max speed possible
-                                      if (treadmillSpeed < MAX_TREADMILL_SPEED) {
-                                          treadmillSpeed += 0.1;
-                                          //format double to display only one decimal point
-                                          speedView.setText(String.format("%.1f", treadmillSpeed));
-
-                                          //get a random song at that treadmill speed
-                                          double bpm = getBPM(treadmillSpeed);
-                                          songList = getSongList(bpm);
-                                          String song = getRandomSong(songList);
-                                          songsPlayed.empty();
-                                          songsPlayed.push(song);
-                                          TextView songInfo = findViewById(R.id.songInfo);
-                                          songInfo.setText(song);
-                                          playVideo(song);
-                                      }
-                                  }
-                              }
+        up.setOnLongClickListener(
+                new View.OnLongClickListener(){
+                    public boolean onLongClick(View arg0) {
+                        mAutoIncrement = true;
+                        repeatUpdateHandler.post( new RptUpdater() );
+                        return false;
+                    }
+                }
         );
 
+        up.setOnTouchListener( new View.OnTouchListener() {
+            public boolean onTouch(View v, MotionEvent event) {
+                if( (event.getAction()==MotionEvent.ACTION_UP || event.getAction()==MotionEvent.ACTION_CANCEL)
+                        && mAutoIncrement ){
+                    mAutoIncrement = false;
+                    //get a random song at that treadmill speed
+                    double bpm = getBPM(treadmillSpeed);
+                    songList = getSongList(bpm);
+                    String song = getRandomSong(songList);
+                    songsPlayed.empty();
+                    songsPlayed.push(song);
+                    TextView songInfo = findViewById(R.id.songInfo);
+                    songInfo.setText(song);
+                    playVideo(song);
+                    Log.d("ASMITA",song);
+                }
+                return false;
+            }
+        });
     }
 
     /*
@@ -308,29 +313,36 @@ public class StartWorkoutActivity extends YouTubeBaseActivity
 
         //decrease treadmill speed by 0.1 everytime up button pressed
         ImageButton down = findViewById(R.id.down);
-        down.setOnClickListener(new View.OnClickListener() {
-                                    @Override
-                                    public void onClick(View v) {
-                                        //only update speed if it is more than min speed possible
-                                        if (treadmillSpeed > MIN_TREADMILL_SPEED) {
-                                            treadmillSpeed -= 0.1;
-                                            //format double to display only one decimal point and remove negative sign from 0.0
-                                            speedView.setText(String.format("%.1f", treadmillSpeed).replaceAll("^-(?=0(\\.0*)?$)", ""));
 
-                                            //get a random song at that treadmill speed
-                                            double bpm = getBPM(treadmillSpeed);
-                                            songList = getSongList(bpm);
-                                            String song = getRandomSong(songList);
-                                            songsPlayed.empty();
-                                            songsPlayed.push(song);
-                                            TextView songInfo = findViewById(R.id.songInfo);
-                                            songInfo.setText(song);
-                                            playVideo(song);
-                                        }
-                                    }
-                                }
+        down.setOnLongClickListener(
+                new View.OnLongClickListener(){
+                    public boolean onLongClick(View arg0) {
+                        mAutoDecrement = true;
+                        repeatUpdateHandler.post( new RptUpdater() );
+                        return false;
+                    }
+                }
         );
 
+        down.setOnTouchListener( new View.OnTouchListener() {
+            public boolean onTouch(View v, MotionEvent event) {
+                if( (event.getAction()==MotionEvent.ACTION_UP || event.getAction()==MotionEvent.ACTION_CANCEL)
+                        && mAutoDecrement ){
+                    mAutoDecrement = false;
+                    //get a random song at that treadmill speed
+                    double bpm = getBPM(treadmillSpeed);
+                    songList = getSongList(bpm);
+                    String song = getRandomSong(songList);
+                    songsPlayed.empty();
+                    songsPlayed.push(song);
+                    TextView songInfo = findViewById(R.id.songInfo);
+                    songInfo.setText(song);
+                    playVideo(song);
+                    Log.d("ASMITA",song);
+                }
+                return false;
+            }
+        });
     }
 
     /*
@@ -381,6 +393,30 @@ public class StartWorkoutActivity extends YouTubeBaseActivity
 
     protected Provider getYouTubePlayerProvider() {
         return youTubeView;
+    }
+
+    class RptUpdater implements Runnable {
+        public void run() {
+            //Text view for treadmill speed
+            final TextView speedView = findViewById(R.id.speed);
+            if( mAutoIncrement ){
+                if (treadmillSpeed < MAX_TREADMILL_SPEED) {
+                    treadmillSpeed += 0.1;
+                    //format double to display only one decimal point
+                    speedView.setText(String.format("%.1f", treadmillSpeed));
+                }
+                repeatUpdateHandler.postDelayed( new RptUpdater(), 300 );
+            } else if( mAutoDecrement ){
+                if (treadmillSpeed > MIN_TREADMILL_SPEED) {
+                    treadmillSpeed -= 0.1;
+                    //format double to display only one decimal point and remove negative sign from 0.0
+                    speedView.setText(String.format("%.1f", treadmillSpeed).replaceAll("^-(?=0(\\.0*)?$)", ""));
+
+
+                }
+                repeatUpdateHandler.postDelayed( new RptUpdater(), 300);
+            }
+        }
     }
 
 
